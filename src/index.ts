@@ -7,6 +7,7 @@ import bodyParser from 'body-parser';
 import {ApolloServerPluginLandingPageGraphQLPlayground} from '@apollo/server-plugin-landing-page-graphql-playground'
 import {prismaClient} from './lib/db.js';
 import createApolloGraphqlServer from './graphql/index.js';
+import UserService from './servies/user.js';
 
 // Type definitions (schema)
 // const typeDefs = `
@@ -58,7 +59,18 @@ async function start() {
     '/graphql',
     cors(),
     bodyParser.json(),
-    expressMiddleware(await createApolloGraphqlServer())
+    expressMiddleware(await createApolloGraphqlServer(), { 
+      context: async ({ req }) => {
+        // @ts-ignore
+        const token = req.headers['token'];
+        console.log(token);
+        try{
+            const user = UserService.decodeJWTToken(token as string);
+            return { user };
+        }catch(error){
+          return {error};
+        }
+    }})
   );
 
   app.listen(8000, () => {
